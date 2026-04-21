@@ -1,7 +1,7 @@
-
-#include "Listener.h"
+#include "net/Listener.h"
 
 #include "log/Logger.h"
+#include "net/SessionManager.h"
 
 #include <boost/system/error_code.hpp>
 
@@ -10,10 +10,11 @@ namespace gs
 
 using boost::asio::ip::tcp;
 
-Listener::Listener(boost::asio::io_context& in_io, Port in_port)
+Listener::Listener(boost::asio::io_context& in_io, Port in_port, std::shared_ptr<SessionManager> in_session_manager)
     : m_io(in_io)
     , m_acceptor(in_io)
     , m_port(in_port)
+    , m_session_manager(in_session_manager)
 {
 }
 
@@ -62,17 +63,8 @@ void Listener::DoAccept()
         {
             if (!in_ec)
             {
-                boost::system::error_code ep_ec;
-                const auto ep = in_socket.remote_endpoint(ep_ec);
-                if (!ep_ec)
-                {
-                    LOG_INFO("accepted: " + ep.address().to_string()
-                             + ":" + std::to_string(ep.port()));
-                }
-                else
-                {
-                    LOG_INFO("accepted: <unknown endpoint>");
-                }
+                auto session = m_session_manager->CreateSession();
+                session->Start(std::move(in_socket));
             }
             else if (in_ec != boost::asio::error::operation_aborted)
             {

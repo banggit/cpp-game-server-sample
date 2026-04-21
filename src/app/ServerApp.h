@@ -9,6 +9,7 @@ namespace gs
 {
 
 class Listener;
+class SessionManager;
 
 class ServerApp
 {
@@ -25,10 +26,11 @@ public:
 private:
     void InitSignalHandlers();
 
-    Port                       m_port;
-    boost::asio::io_context    m_io;
-    boost::asio::signal_set    m_handlers;
-    std::unique_ptr<Listener> m_listener;
+    Port                                m_port;
+    boost::asio::io_context             m_io;
+    boost::asio::signal_set             m_handlers;
+    std::shared_ptr<SessionManager>     m_session_manager;
+    std::unique_ptr<Listener>           m_listener;
 };
 
 } // namespace gs

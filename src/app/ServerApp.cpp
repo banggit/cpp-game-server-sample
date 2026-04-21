@@ -2,6 +2,7 @@
 
 #include "log/Logger.h"
 #include "net/Listener.h"
+#include "net/SessionManager.h"
 
 #include <csignal>
 
@@ -33,7 +34,8 @@ void ServerApp::Run()
 {
     InitSignalHandlers();
 
-    m_listener = std::make_unique<Listener>(m_io, m_port);
+    m_session_manager = std::make_shared<SessionManager>(m_io);
+    m_listener = std::make_unique<Listener>(m_io, m_port, m_session_manager);
     m_listener->Start();
 
     LOG_INFO("server running on port " + std::to_string(m_port));

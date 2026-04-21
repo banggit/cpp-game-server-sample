@@ -24,6 +24,8 @@ add_executable(game_server
     src/main.cpp
     src/app/ServerApp.cpp
     src/net/Listener.cpp
+    src/net/Session.cpp
+    src/net/SessionManager.cpp
 )
 
 target_include_directories(game_server PRIVATE

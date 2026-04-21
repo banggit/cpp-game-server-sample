@@ -3,14 +3,17 @@
 #include "common/Types.h"
 
 #include <boost/asio.hpp>
+#include <memory>
 
 namespace gs
 {
 
+class SessionManager;
+
 class Listener
 {
 public:
-    Listener(boost::asio::io_context& in_io, Port in_port);
+    Listener(boost::asio::io_context& in_io, Port in_port, std::shared_ptr<SessionManager> in_session_manager);
 
     void Start();
     void Stop();
@@ -18,9 +21,10 @@ public:
 private:
     void DoAccept();
 
-    boost::asio::io_context&        m_io;
-    boost::asio::ip::tcp::acceptor  m_acceptor;
-    Port                            m_port;
+    boost::asio::io_context&                m_io;
+    boost::asio::ip::tcp::acceptor          m_acceptor;
+    Port                                    m_port;
+    std::shared_ptr<SessionManager>         m_session_manager;
 };
 
 } // namespace gs
