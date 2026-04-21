@@ -16,7 +16,6 @@ endif()
 
 find_package(Threads REQUIRED)
 
-# Boost.Asio (header-only usage). system 컴포넌트만 링크.
 set(Boost_USE_STATIC_LIBS OFF)
 find_package(Boost 1.71 REQUIRED)
 
@@ -26,6 +25,8 @@ add_executable(game_server
     src/net/Listener.cpp
     src/net/Session.cpp
     src/net/SessionManager.cpp
+    src/net/PacketBuffer.cpp
+    src/net/PacketHandler.cpp
 )
 
 target_include_directories(game_server PRIVATE

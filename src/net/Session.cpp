@@ -11,6 +11,8 @@ Session::Session(boost::asio::io_context& in_io, SessionId in_session_id)
     , m_session_id(in_session_id)
     , m_is_connected(false)
     , m_receive_buffer(MAX_PACKET_SIZE)
+    , m_packet_buffer()
+    , m_packet_handler()
     , m_last_activity_time(std::chrono::system_clock::now())
 {
 }
@@ -94,7 +96,23 @@ void Session::OnReceiveComplete(const boost::system::error_code& in_ec, std::siz
     LOG_DEBUG("session " + std::to_string(m_session_id)
               + " received " + std::to_string(in_bytes) + " bytes");
 
+    m_packet_buffer.Append(m_receive_buffer.data(), in_bytes);
+    ProcessPackets();
+
     DoReceive();
+}
+
+void Session::ProcessPackets()
+{
+    std::vector<std::uint8_t> packet_data;
+    while (m_packet_buffer.TryReadPacket(packet_data))
+    {
+        const bool dispatch_result = m_packet_handler.Dispatch(m_session_id, packet_data);
+        if (!dispatch_result)
+        {
+            LOG_WARN("session " + std::to_string(m_session_id) + " dispatch failed");
+        }
+    }
 }
 
 } // namespace gs

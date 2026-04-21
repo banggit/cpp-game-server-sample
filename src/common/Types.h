@@ -17,6 +17,7 @@ enum class PacketId : std::uint16_t
 };
 
 constexpr std::size_t MAX_PACKET_SIZE = 4096;
+constexpr std::size_t PACKET_HEADER_SIZE = 4;
 constexpr auto SESSION_TIMEOUT_DURATION = std::chrono::seconds(30);
 
 } // namespace gs

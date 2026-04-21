@@ -1,10 +1,11 @@
 #pragma once
 
 #include "common/Types.h"
+#include "net/PacketBuffer.h"
+#include "net/PacketHandler.h"
 
 #include <boost/asio.hpp>
 #include <memory>
-#include <vector>
 #include <chrono>
 
 namespace gs
@@ -40,12 +41,15 @@ public:
 private:
     void DoReceive();
     void OnReceiveComplete(const boost::system::error_code& in_ec, std::size_t in_bytes);
+    void ProcessPackets();
 
     boost::asio::io_context&        m_io;
     boost::asio::ip::tcp::socket    m_socket;
-    SessionId                       m_session_id;
+    SessionId                        m_session_id;
     bool                            m_is_connected;
     std::vector<std::uint8_t>       m_receive_buffer;
+    PacketBuffer                    m_packet_buffer;
+    PacketHandler                   m_packet_handler;
     std::chrono::system_clock::time_point m_last_activity_time;
 };
 
