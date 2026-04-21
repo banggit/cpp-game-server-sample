@@ -5,6 +5,7 @@
 #include "net/SessionManager.h"
 #include "logic/JobQueue.h"
 #include "logic/LogicWorker.h"
+#include "logic/HeartbeatTimer.h"
 
 #include <csignal>
 
@@ -18,6 +19,7 @@ ServerApp::ServerApp(Port in_port)
     , m_job_queue(std::make_shared<JobQueue>())
     , m_session_manager(std::make_shared<SessionManager>(m_io))
     , m_logic_worker(nullptr)
+    , m_heartbeat_timer(nullptr)
     , m_listener(nullptr)
 {
 }
@@ -43,6 +45,9 @@ void ServerApp::Run()
     m_logic_worker = std::make_unique<LogicWorker>(m_job_queue, m_session_manager);
     m_logic_worker->Start();
 
+    m_heartbeat_timer = std::make_unique<HeartbeatTimer>(m_session_manager, m_job_queue);
+    m_heartbeat_timer->Start();
+
     m_listener = std::make_unique<Listener>(m_io, m_port, m_session_manager, m_job_queue);
     m_listener->Start();
 
@@ -56,6 +61,10 @@ void ServerApp::Stop()
     if (m_listener)
     {
         m_listener->Stop();
+    }
+    if (m_heartbeat_timer)
+    {
+        m_heartbeat_timer->Stop();
     }
     if (m_logic_worker)
     {

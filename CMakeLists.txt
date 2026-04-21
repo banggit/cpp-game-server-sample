@@ -29,6 +29,7 @@ add_executable(game_server
     src/net/PacketHandler.cpp
     src/logic/JobQueue.cpp
     src/logic/LogicWorker.cpp
+    src/logic/HeartbeatTimer.cpp
 )
 
 target_include_directories(game_server PRIVATE

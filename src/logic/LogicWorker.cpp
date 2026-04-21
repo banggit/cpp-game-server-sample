@@ -62,6 +62,10 @@ void LogicWorker::Run()
                 LOG_WARN("logic worker dispatch failed for session " + std::to_string(job.TargetSessionId));
             }
         }
+        else if (job.Type == JobType::SESSION_CLOSE)
+        {
+            LOG_DEBUG("logic worker closing session " + std::to_string(job.TargetSessionId));
+        }
     }
 
     LOG_DEBUG("logic worker thread exiting");

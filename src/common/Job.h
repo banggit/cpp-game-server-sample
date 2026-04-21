@@ -11,7 +11,8 @@ namespace gs
 
 enum class JobType : std::uint8_t
 {
-    PACKET_PROCESS = 1
+    PACKET_PROCESS = 1,
+    SESSION_CLOSE  = 2
 };
 
 struct Job

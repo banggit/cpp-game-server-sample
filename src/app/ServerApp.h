@@ -12,6 +12,7 @@ class Listener;
 class SessionManager;
 class JobQueue;
 class LogicWorker;
+class HeartbeatTimer;
 
 class ServerApp
 {
@@ -34,6 +35,7 @@ private:
     std::shared_ptr<JobQueue>           m_job_queue;
     std::shared_ptr<SessionManager>     m_session_manager;
     std::unique_ptr<LogicWorker>        m_logic_worker;
+    std::unique_ptr<HeartbeatTimer>     m_heartbeat_timer;
     std::unique_ptr<Listener>           m_listener;
 };
 
