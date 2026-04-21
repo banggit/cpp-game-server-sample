@@ -1,0 +1,6 @@
+build/
+.idea/
+.DS_Store
+
+# VS Code
+.vscode/c_cpp_properties.json
