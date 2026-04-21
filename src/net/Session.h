@@ -2,7 +2,6 @@
 
 #include "common/Types.h"
 #include "net/PacketBuffer.h"
-#include "net/PacketHandler.h"
 
 #include <boost/asio.hpp>
 #include <memory>
@@ -11,10 +10,12 @@
 namespace gs
 {
 
+class JobQueue;
+
 class Session : public std::enable_shared_from_this<Session>
 {
 public:
-    Session(boost::asio::io_context& in_io, SessionId in_session_id);
+    Session(boost::asio::io_context& in_io, SessionId in_session_id, std::shared_ptr<JobQueue> in_job_queue);
     ~Session();
 
     Session(const Session&) = delete;
@@ -49,7 +50,7 @@ private:
     bool                            m_is_connected;
     std::vector<std::uint8_t>       m_receive_buffer;
     PacketBuffer                    m_packet_buffer;
-    PacketHandler                   m_packet_handler;
+    std::shared_ptr<JobQueue>       m_job_queue;
     std::chrono::system_clock::time_point m_last_activity_time;
 };
 

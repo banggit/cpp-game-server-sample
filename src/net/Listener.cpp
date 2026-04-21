@@ -2,6 +2,7 @@
 
 #include "log/Logger.h"
 #include "net/SessionManager.h"
+#include "logic/JobQueue.h"
 
 #include <boost/system/error_code.hpp>
 
@@ -10,11 +11,12 @@ namespace gs
 
 using boost::asio::ip::tcp;
 
-Listener::Listener(boost::asio::io_context& in_io, Port in_port, std::shared_ptr<SessionManager> in_session_manager)
+Listener::Listener(boost::asio::io_context& in_io, Port in_port, std::shared_ptr<SessionManager> in_session_manager, std::shared_ptr<JobQueue> in_job_queue)
     : m_io(in_io)
     , m_acceptor(in_io)
     , m_port(in_port)
     , m_session_manager(in_session_manager)
+    , m_job_queue(in_job_queue)
 {
 }
 
@@ -63,7 +65,7 @@ void Listener::DoAccept()
         {
             if (!in_ec)
             {
-                auto session = m_session_manager->CreateSession();
+                auto session = m_session_manager->CreateSession(m_job_queue);
                 session->Start(std::move(in_socket));
             }
             else if (in_ec != boost::asio::error::operation_aborted)

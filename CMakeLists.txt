@@ -27,6 +27,8 @@ add_executable(game_server
     src/net/SessionManager.cpp
     src/net/PacketBuffer.cpp
     src/net/PacketHandler.cpp
+    src/logic/JobQueue.cpp
+    src/logic/LogicWorker.cpp
 )
 
 target_include_directories(game_server PRIVATE

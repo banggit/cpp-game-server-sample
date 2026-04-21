@@ -1,8 +1,10 @@
-#include "ServerApp.h"
+#include "app/ServerApp.h"
 
 #include "log/Logger.h"
 #include "net/Listener.h"
 #include "net/SessionManager.h"
+#include "logic/JobQueue.h"
+#include "logic/LogicWorker.h"
 
 #include <csignal>
 
@@ -13,6 +15,10 @@ ServerApp::ServerApp(Port in_port)
     : m_port(in_port)
     , m_io()
     , m_handlers(m_io, SIGINT, SIGTERM)
+    , m_job_queue(std::make_shared<JobQueue>())
+    , m_session_manager(std::make_shared<SessionManager>(m_io))
+    , m_logic_worker(nullptr)
+    , m_listener(nullptr)
 {
 }
 
@@ -34,8 +40,10 @@ void ServerApp::Run()
 {
     InitSignalHandlers();
 
-    m_session_manager = std::make_shared<SessionManager>(m_io);
-    m_listener = std::make_unique<Listener>(m_io, m_port, m_session_manager);
+    m_logic_worker = std::make_unique<LogicWorker>(m_job_queue, m_session_manager);
+    m_logic_worker->Start();
+
+    m_listener = std::make_unique<Listener>(m_io, m_port, m_session_manager, m_job_queue);
     m_listener->Start();
 
     LOG_INFO("server running on port " + std::to_string(m_port));
@@ -48,6 +56,10 @@ void ServerApp::Stop()
     if (m_listener)
     {
         m_listener->Stop();
+    }
+    if (m_logic_worker)
+    {
+        m_logic_worker->Stop();
     }
     m_io.stop();
 }

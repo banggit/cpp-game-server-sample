@@ -11,6 +11,8 @@
 namespace gs
 {
 
+class JobQueue;
+
 class SessionManager
 {
 public:
@@ -20,7 +22,7 @@ public:
     SessionManager(const SessionManager&) = delete;
     SessionManager& operator=(const SessionManager&) = delete;
 
-    std::shared_ptr<Session> CreateSession();
+    std::shared_ptr<Session> CreateSession(std::shared_ptr<JobQueue> in_job_queue);
     void RemoveSession(SessionId in_session_id);
     std::shared_ptr<Session> GetSession(SessionId in_session_id);
 
