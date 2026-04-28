@@ -16,6 +16,7 @@ GameWorker::GameWorker(std::shared_ptr<SessionManager> in_session_manager,
     , m_user_manager(in_user_manager)
     , m_db_worker(nullptr)
     , m_packet_handler()
+    , m_last_user_update(std::chrono::system_clock::now())
 {
     m_packet_handler.SetUserManager(in_user_manager);
 }
@@ -31,11 +32,47 @@ void GameWorker::SetDbWorker(std::shared_ptr<DbWorker> in_db_worker)
 void GameWorker::OnCreate()
 {
     LOG_DEBUG("game worker created");
+    m_last_user_update = std::chrono::system_clock::now();
 }
 
 void GameWorker::OnDestroy()
 {
     LOG_DEBUG("game worker destroyed");
+}
+
+void GameWorker::OnUpdate()
+{
+    // ThreadMain은 매 1ms 루프이므로,
+    // 주기적 작업은 시간 기반으로 직접 throttle한다.
+    const auto now = std::chrono::system_clock::now();
+    if (now - m_last_user_update < USER_UPDATE_INTERVAL)
+    {
+        return;
+    }
+    m_last_user_update = now;
+
+    UpdateAllUsers();
+}
+
+void GameWorker::UpdateAllUsers()
+{
+    if (!m_user_manager || !m_session_manager)
+    {
+        return;
+    }
+
+    m_user_manager->ForEachUser([this](const std::shared_ptr<User>& in_user)
+    {
+        if (!in_user)
+        {
+            return;
+        }
+
+        // User에 바인딩된 세션을 찾아 함께 전달.
+        // User가 SessionManager를 직접 참조하지 않게 하여 결합도를 낮춘다.
+        auto session = m_session_manager->GetSession(in_user->GetSessionId());
+        in_user->OnUpdate(session);
+    });
 }
 
 void GameWorker::OnSessionClosed(SessionId in_session_id)
@@ -45,7 +82,6 @@ void GameWorker::OnSessionClosed(SessionId in_session_id)
         return;
     }
 
-    // Session에 바인딩된 User가 있으면 UserManager에서 제거.
     auto session = m_session_manager->GetSession(in_session_id);
     if (session)
     {

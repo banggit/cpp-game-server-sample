@@ -29,10 +29,10 @@ public:
     std::size_t GetSessionCount() const;
 
 private:
-    boost::asio::io_context&                    m_io;
+    boost::asio::io_context&                      m_io;
     std::map<SessionId, std::shared_ptr<Session>> m_sessions;
-    SessionId                                   m_next_session_id;
-    mutable std::mutex                          m_mutex;
+    SessionId                                     m_next_session_id;
+    mutable std::mutex                            m_mutex;
 };
 
 } // namespace gs

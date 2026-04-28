@@ -2,10 +2,14 @@
 
 #include "common/Types.h"
 
+#include <chrono>
+#include <memory>
 #include <string>
 
 namespace gs
 {
+
+class Session;
 
 // 게임 내 유저(캐릭터) 객체.
 // LOGIN 시 메모리에 즉시 생성되며, Session에 바인딩된다.
@@ -46,7 +50,14 @@ public:
         m_session_id = in_session_id;
     }
 
+    // 주기적으로 GameWorker가 호출하는 갱신 함수.
+    // Session은 호출자(GameWorker)가 SessionManager에서 lookup해서 넘긴다.
+    // User가 SessionManager를 알 필요 없게 결합도를 낮춘다.
+    void OnUpdate(const std::shared_ptr<Session>& in_session);
+
 private:
+    void CheckHeartbeat(const std::shared_ptr<Session>& in_session);
+
     UserId          m_user_id;
     AccountId       m_account_id;
     std::string     m_name;

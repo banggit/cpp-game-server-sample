@@ -5,7 +5,6 @@
 #include "net/SessionManager.h"
 #include "logic/GameWorker.h"
 #include "logic/DbWorker.h"
-#include "logic/HeartbeatTimer.h"
 #include "user/UserManager.h"
 #include "worker/WorkerManager.h"
 
@@ -24,7 +23,6 @@ ServerApp::ServerApp(Port in_port)
     , m_listener(nullptr)
     , m_game_worker(nullptr)
     , m_db_worker(nullptr)
-    , m_heartbeat_timer(nullptr)
 {
 }
 
@@ -47,10 +45,6 @@ void ServerApp::Stop()
     {
         m_listener->Stop();
     }
-    if (m_heartbeat_timer)
-    {
-        m_heartbeat_timer->Stop();
-    }
     m_worker_manager->Destroy();
     m_io.stop();
 }
@@ -69,7 +63,6 @@ void ServerApp::InitSignalHandlers()
 
 void ServerApp::InitWorkers()
 {
-    // 1. GameWorker 등록 (UserManager 주입).
     m_game_worker = std::make_shared<GameWorker>(m_session_manager, m_user_manager);
     if (!m_worker_manager->Insert("game_worker", m_game_worker))
     {
@@ -77,7 +70,6 @@ void ServerApp::InitWorkers()
         return;
     }
 
-    // 2. DbWorker 등록.
     m_db_worker = std::make_shared<DbWorker>(m_game_worker);
     if (!m_worker_manager->Insert("db_worker", m_db_worker))
     {
@@ -85,15 +77,11 @@ void ServerApp::InitWorkers()
         return;
     }
 
-    // 3. GameWorker가 DbWorker를 참조하도록 wiring.
     m_game_worker->SetDbWorker(m_db_worker);
 }
 
 void ServerApp::InitNetwork()
 {
-    m_heartbeat_timer = std::make_unique<HeartbeatTimer>(m_session_manager);
-    m_heartbeat_timer->Start();
-
     m_listener = std::make_unique<Listener>(m_io, m_port, m_session_manager, m_game_worker);
     m_listener->Start();
 }

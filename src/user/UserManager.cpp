@@ -2,6 +2,8 @@
 
 #include "log/Logger.h"
 
+#include <vector>
+
 namespace gs
 {
 
@@ -18,8 +20,6 @@ UserManager::~UserManager()
 
 UserId UserManager::ResolveUserId(AccountId in_account_id)
 {
-    // 실제 게임에서는 DB의 account 테이블에서 user_id를 조회한다.
-    // 샘플에서는 단순 변환: account_id 1000 → user_id 1, 1001 → 2, ...
     constexpr AccountId ACCOUNT_ID_BASE = 1000;
     if (in_account_id < ACCOUNT_ID_BASE)
     {
@@ -39,8 +39,6 @@ std::shared_ptr<User> UserManager::CreateUser(AccountId in_account_id, SessionId
 
     std::lock_guard<std::mutex> lock(m_mutex);
 
-    // 이미 같은 user_id로 접속 중인 유저가 있다면 거부.
-    // 실제 게임에서는 기존 세션을 끊고 새 세션을 받는 정책도 흔하다.
     if (m_users.find(user_id) != m_users.end())
     {
         LOG_WARN("user manager: user " + std::to_string(user_id) + " already online");
@@ -85,6 +83,29 @@ std::size_t UserManager::GetUserCount() const
 {
     std::lock_guard<std::mutex> lock(m_mutex);
     return m_users.size();
+}
+
+void UserManager::ForEachUser(const ForEachCallback& in_callback)
+{
+    if (!in_callback)
+    {
+        return;
+    }
+
+    std::vector<std::shared_ptr<User>> snapshot;
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        snapshot.reserve(m_users.size());
+        for (const auto& [id, user] : m_users)
+        {
+            snapshot.push_back(user);
+        }
+    }
+
+    for (const auto& user : snapshot)
+    {
+        in_callback(user);
+    }
 }
 
 } // namespace gs

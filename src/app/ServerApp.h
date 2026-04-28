@@ -12,7 +12,6 @@ class Listener;
 class SessionManager;
 class GameWorker;
 class DbWorker;
-class HeartbeatTimer;
 class WorkerManager;
 class UserManager;
 
@@ -53,7 +52,6 @@ private:
     // ────────────────────────────────────────────
     std::shared_ptr<GameWorker>         m_game_worker;
     std::shared_ptr<DbWorker>           m_db_worker;
-    std::unique_ptr<HeartbeatTimer>     m_heartbeat_timer;
 };
 
 } // namespace gs
