@@ -2,7 +2,6 @@
 
 #include "common/Types.h"
 #include "net/SessionManager.h"
-#include "logic/JobQueue.h"
 
 #include <thread>
 #include <memory>
@@ -14,7 +13,7 @@ namespace gs
 class HeartbeatTimer
 {
 public:
-    HeartbeatTimer(std::shared_ptr<SessionManager> in_session_manager, std::shared_ptr<JobQueue> in_job_queue);
+    explicit HeartbeatTimer(std::shared_ptr<SessionManager> in_session_manager);
     ~HeartbeatTimer();
 
     HeartbeatTimer(const HeartbeatTimer&) = delete;
@@ -28,7 +27,6 @@ private:
     void CheckSessionTimeout();
 
     std::shared_ptr<SessionManager>     m_session_manager;
-    std::shared_ptr<JobQueue>           m_job_queue;
     std::unique_ptr<std::thread>        m_thread;
     bool                                m_is_running;
 

@@ -8,9 +8,8 @@
 namespace gs
 {
 
-HeartbeatTimer::HeartbeatTimer(std::shared_ptr<SessionManager> in_session_manager, std::shared_ptr<JobQueue> in_job_queue)
+HeartbeatTimer::HeartbeatTimer(std::shared_ptr<SessionManager> in_session_manager)
     : m_session_manager(in_session_manager)
-    , m_job_queue(in_job_queue)
     , m_thread(nullptr)
     , m_is_running(false)
 {

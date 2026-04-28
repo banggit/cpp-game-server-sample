@@ -10,9 +10,9 @@ namespace gs
 
 class Listener;
 class SessionManager;
-class JobQueue;
-class LogicWorker;
+class GameWorker;
 class HeartbeatTimer;
+class WorkerManager;
 
 class ServerApp
 {
@@ -32,9 +32,9 @@ private:
     Port                                m_port;
     boost::asio::io_context             m_io;
     boost::asio::signal_set             m_handlers;
-    std::shared_ptr<JobQueue>           m_job_queue;
+    std::shared_ptr<WorkerManager>      m_worker_manager;
     std::shared_ptr<SessionManager>     m_session_manager;
-    std::unique_ptr<LogicWorker>        m_logic_worker;
+    std::shared_ptr<GameWorker>         m_game_worker;
     std::unique_ptr<HeartbeatTimer>     m_heartbeat_timer;
     std::unique_ptr<Listener>           m_listener;
 };

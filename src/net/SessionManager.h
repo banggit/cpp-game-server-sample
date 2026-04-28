@@ -11,9 +11,9 @@
 namespace gs
 {
 
-class JobQueue;
+class GameWorker;
 
-class SessionManager : public std::enable_shared_from_this<SessionManager>
+class SessionManager
 {
 public:
     explicit SessionManager(boost::asio::io_context& in_io);
@@ -22,7 +22,7 @@ public:
     SessionManager(const SessionManager&) = delete;
     SessionManager& operator=(const SessionManager&) = delete;
 
-    std::shared_ptr<Session> CreateSession(std::shared_ptr<JobQueue> in_job_queue);
+    std::shared_ptr<Session> CreateSession(std::shared_ptr<GameWorker> in_game_worker);
     void RemoveSession(SessionId in_session_id);
     std::shared_ptr<Session> GetSession(SessionId in_session_id);
 

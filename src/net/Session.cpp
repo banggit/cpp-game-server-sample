@@ -1,23 +1,20 @@
 #include "net/Session.h"
 
 #include "log/Logger.h"
-#include "logic/JobQueue.h"
-#include "net/SessionManager.h"
+#include "logic/GameWorker.h"
 #include "common/Job.h"
 
 namespace gs
 {
 
-Session::Session(boost::asio::io_context& in_io, SessionId in_session_id, std::shared_ptr<JobQueue> in_job_queue,
-                 std::weak_ptr<SessionManager> in_session_manager)
+Session::Session(boost::asio::io_context& in_io, SessionId in_session_id, std::shared_ptr<GameWorker> in_game_worker)
     : m_io(in_io)
     , m_socket(in_io)
     , m_session_id(in_session_id)
     , m_is_connected(false)
     , m_receive_buffer(MAX_PACKET_SIZE)
     , m_packet_buffer()
-    , m_job_queue(in_job_queue)
-    , m_session_manager(in_session_manager)
+    , m_game_worker(in_game_worker)
     , m_send_queue()
     , m_is_sending(false)
     , m_last_activity_time(std::chrono::system_clock::now())
@@ -57,10 +54,10 @@ void Session::Close()
         m_socket.close(ec);
         LOG_INFO("session " + std::to_string(m_session_id) + " closed");
 
-        auto session_manager = m_session_manager.lock();
-        if (session_manager)
+        auto game_worker = m_game_worker;
+        if (game_worker)
         {
-            session_manager->RemoveSession(m_session_id);
+            game_worker->RemoveSession(m_session_id);
         }
     }
 }
@@ -138,7 +135,7 @@ void Session::ProcessPackets()
     while (m_packet_buffer.TryReadPacket(packet_data))
     {
         Job job(JobType::PACKET_PROCESS, m_session_id, packet_data);
-        m_job_queue->Enqueue(job);
+        m_game_worker->Push(job);
     }
 }
 

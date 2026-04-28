@@ -11,14 +11,12 @@
 namespace gs
 {
 
-class JobQueue;
-class SessionManager;
+class GameWorker;
 
 class Session : public std::enable_shared_from_this<Session>
 {
 public:
-    Session(boost::asio::io_context& in_io, SessionId in_session_id, std::shared_ptr<JobQueue> in_job_queue,
-            std::weak_ptr<SessionManager> in_session_manager);
+    Session(boost::asio::io_context& in_io, SessionId in_session_id, std::shared_ptr<GameWorker> in_game_worker);
     ~Session();
 
     Session(const Session&) = delete;
@@ -55,8 +53,7 @@ private:
     bool                            m_is_connected;
     std::vector<std::uint8_t>       m_receive_buffer;
     PacketBuffer                    m_packet_buffer;
-    std::shared_ptr<JobQueue>       m_job_queue;
-    std::weak_ptr<SessionManager>   m_session_manager;
+    std::shared_ptr<GameWorker>     m_game_worker;
     std::vector<std::uint8_t>       m_send_queue;
     bool                            m_is_sending;
     std::chrono::system_clock::time_point m_last_activity_time;

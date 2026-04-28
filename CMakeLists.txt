@@ -28,8 +28,7 @@ add_executable(game_server
     src/net/PacketBuffer.cpp
     src/net/PacketBuilder.cpp
     src/net/PacketHandler.cpp
-    src/logic/JobQueue.cpp
-    src/logic/LogicWorker.cpp
+    src/logic/GameWorker.cpp
     src/logic/HeartbeatTimer.cpp
     src/worker/Worker.cpp
     src/worker/WorkerManager.cpp

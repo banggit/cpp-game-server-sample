@@ -1,7 +1,7 @@
 #include "net/SessionManager.h"
 
 #include "log/Logger.h"
-#include "logic/JobQueue.h"
+#include "logic/GameWorker.h"
 
 namespace gs
 {
@@ -18,12 +18,12 @@ SessionManager::~SessionManager()
     m_sessions.clear();
 }
 
-std::shared_ptr<Session> SessionManager::CreateSession(std::shared_ptr<JobQueue> in_job_queue)
+std::shared_ptr<Session> SessionManager::CreateSession(std::shared_ptr<GameWorker> in_game_worker)
 {
     std::lock_guard<std::mutex> lock(m_mutex);
 
     const SessionId session_id = m_next_session_id++;
-    auto session = std::make_shared<Session>(m_io, session_id, in_job_queue, shared_from_this());
+    auto session = std::make_shared<Session>(m_io, session_id, in_game_worker);
 
     m_sessions[session_id] = session;
     LOG_DEBUG("session " + std::to_string(session_id) + " created");
