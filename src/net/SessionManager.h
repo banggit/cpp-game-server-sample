@@ -13,7 +13,7 @@ namespace gs
 
 class JobQueue;
 
-class SessionManager
+class SessionManager : public std::enable_shared_from_this<SessionManager>
 {
 public:
     explicit SessionManager(boost::asio::io_context& in_io);

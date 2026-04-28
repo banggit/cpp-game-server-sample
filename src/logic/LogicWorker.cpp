@@ -56,10 +56,14 @@ void LogicWorker::Run()
     {
         if (job.Type == JobType::PACKET_PROCESS)
         {
-            const bool dispatch_result = m_packet_handler.Dispatch(job.TargetSessionId, job.PacketData);
-            if (!dispatch_result)
+            auto session = m_session_manager->GetSession(job.TargetSessionId);
+            if (session)
             {
-                LOG_WARN("logic worker dispatch failed for session " + std::to_string(job.TargetSessionId));
+                const bool dispatch_result = m_packet_handler.Dispatch(job.TargetSessionId, job.PacketData, session);
+                if (!dispatch_result)
+                {
+                    LOG_WARN("logic worker dispatch failed for session " + std::to_string(job.TargetSessionId));
+                }
             }
         }
         else if (job.Type == JobType::SESSION_CLOSE)

@@ -6,16 +6,19 @@
 #include <boost/asio.hpp>
 #include <memory>
 #include <chrono>
+#include <vector>
 
 namespace gs
 {
 
 class JobQueue;
+class SessionManager;
 
 class Session : public std::enable_shared_from_this<Session>
 {
 public:
-    Session(boost::asio::io_context& in_io, SessionId in_session_id, std::shared_ptr<JobQueue> in_job_queue);
+    Session(boost::asio::io_context& in_io, SessionId in_session_id, std::shared_ptr<JobQueue> in_job_queue,
+            std::weak_ptr<SessionManager> in_session_manager);
     ~Session();
 
     Session(const Session&) = delete;
@@ -23,6 +26,7 @@ public:
 
     void Start(boost::asio::ip::tcp::socket in_socket);
     void Close();
+    void SendPacket(const std::vector<std::uint8_t>& in_packet_data);
 
     SessionId GetSessionId() const
     {
@@ -43,6 +47,7 @@ private:
     void DoReceive();
     void OnReceiveComplete(const boost::system::error_code& in_ec, std::size_t in_bytes);
     void ProcessPackets();
+    void DoSend();
 
     boost::asio::io_context&        m_io;
     boost::asio::ip::tcp::socket    m_socket;
@@ -51,6 +56,9 @@ private:
     std::vector<std::uint8_t>       m_receive_buffer;
     PacketBuffer                    m_packet_buffer;
     std::shared_ptr<JobQueue>       m_job_queue;
+    std::weak_ptr<SessionManager>   m_session_manager;
+    std::vector<std::uint8_t>       m_send_queue;
+    bool                            m_is_sending;
     std::chrono::system_clock::time_point m_last_activity_time;
 };
 

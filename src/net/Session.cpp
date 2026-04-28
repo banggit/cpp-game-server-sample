@@ -2,12 +2,14 @@
 
 #include "log/Logger.h"
 #include "logic/JobQueue.h"
+#include "net/SessionManager.h"
 #include "common/Job.h"
 
 namespace gs
 {
 
-Session::Session(boost::asio::io_context& in_io, SessionId in_session_id, std::shared_ptr<JobQueue> in_job_queue)
+Session::Session(boost::asio::io_context& in_io, SessionId in_session_id, std::shared_ptr<JobQueue> in_job_queue,
+                 std::weak_ptr<SessionManager> in_session_manager)
     : m_io(in_io)
     , m_socket(in_io)
     , m_session_id(in_session_id)
@@ -15,6 +17,9 @@ Session::Session(boost::asio::io_context& in_io, SessionId in_session_id, std::s
     , m_receive_buffer(MAX_PACKET_SIZE)
     , m_packet_buffer()
     , m_job_queue(in_job_queue)
+    , m_session_manager(in_session_manager)
+    , m_send_queue()
+    , m_is_sending(false)
     , m_last_activity_time(std::chrono::system_clock::now())
 {
 }
@@ -48,8 +53,31 @@ void Session::Close()
     {
         m_is_connected = false;
         boost::system::error_code ec;
+        m_socket.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
         m_socket.close(ec);
         LOG_INFO("session " + std::to_string(m_session_id) + " closed");
+
+        auto session_manager = m_session_manager.lock();
+        if (session_manager)
+        {
+            session_manager->RemoveSession(m_session_id);
+        }
+    }
+}
+
+void Session::SendPacket(const std::vector<std::uint8_t>& in_packet_data)
+{
+    if (!m_is_connected)
+    {
+        LOG_WARN("session " + std::to_string(m_session_id) + " send called on disconnected session");
+        return;
+    }
+
+    m_send_queue.insert(m_send_queue.end(), in_packet_data.begin(), in_packet_data.end());
+
+    if (!m_is_sending)
+    {
+        DoSend();
     }
 }
 
@@ -112,6 +140,46 @@ void Session::ProcessPackets()
         Job job(JobType::PACKET_PROCESS, m_session_id, packet_data);
         m_job_queue->Enqueue(job);
     }
+}
+
+void Session::DoSend()
+{
+    if (m_send_queue.empty() || m_is_sending || !m_is_connected)
+    {
+        return;
+    }
+
+    m_is_sending = true;
+    auto self = shared_from_this();
+
+    m_socket.async_send(
+        boost::asio::buffer(m_send_queue),
+        [self](const boost::system::error_code& in_ec, std::size_t in_bytes)
+        {
+            if (!self->m_is_connected)
+            {
+                return;
+            }
+
+            if (in_ec)
+            {
+                LOG_WARN("session " + std::to_string(self->m_session_id)
+                         + " send error: " + in_ec.message());
+                self->Close();
+                return;
+            }
+
+            LOG_DEBUG("session " + std::to_string(self->m_session_id)
+                      + " sent " + std::to_string(in_bytes) + " bytes");
+
+            self->m_send_queue.erase(self->m_send_queue.begin(), self->m_send_queue.begin() + in_bytes);
+            self->m_is_sending = false;
+
+            if (!self->m_send_queue.empty())
+            {
+                self->DoSend();
+            }
+        });
 }
 
 } // namespace gs

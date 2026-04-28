@@ -26,6 +26,7 @@ add_executable(game_server
     src/net/Session.cpp
     src/net/SessionManager.cpp
     src/net/PacketBuffer.cpp
+    src/net/PacketBuilder.cpp
     src/net/PacketHandler.cpp
     src/logic/JobQueue.cpp
     src/logic/LogicWorker.cpp
