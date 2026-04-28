@@ -3,8 +3,8 @@
 #include "common/Types.h"
 
 #include <cstdint>
-#include <vector>
 #include <memory>
+#include <vector>
 
 namespace gs
 {
@@ -17,16 +17,24 @@ enum class JobType : std::uint8_t
     DB_CALLBACK     = 4
 };
 
+enum class DbResult : std::uint8_t
+{
+    SUCCESS = 0,
+    FAILED  = 1
+};
+
 struct Job
 {
     JobType                         Type;
     SessionId                       TargetSessionId;
     std::vector<std::uint8_t>       PacketData;
+    DbResult                        Result;
 
     Job()
         : Type(JobType::PACKET_PROCESS)
         , TargetSessionId(0)
         , PacketData()
+        , Result(DbResult::SUCCESS)
     {
     }
 
@@ -34,6 +42,7 @@ struct Job
         : Type(in_type)
         , TargetSessionId(in_session_id)
         , PacketData(in_packet_data)
+        , Result(DbResult::SUCCESS)
     {
     }
 
