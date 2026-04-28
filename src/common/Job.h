@@ -13,14 +13,7 @@ enum class JobType : std::uint8_t
 {
     PACKET_PROCESS  = 1,
     SESSION_CLOSE   = 2,
-    DB_QUERY        = 3,
-    DB_CALLBACK     = 4
-};
-
-enum class DbResult : std::uint8_t
-{
-    SUCCESS = 0,
-    FAILED  = 1
+    DB_LOG_LOGIN    = 3   // fire-and-forget DB 기록
 };
 
 struct Job
@@ -28,13 +21,11 @@ struct Job
     JobType                         Type;
     SessionId                       TargetSessionId;
     std::vector<std::uint8_t>       PacketData;
-    DbResult                        Result;
 
     Job()
         : Type(JobType::PACKET_PROCESS)
         , TargetSessionId(0)
         , PacketData()
-        , Result(DbResult::SUCCESS)
     {
     }
 
@@ -42,7 +33,6 @@ struct Job
         : Type(in_type)
         , TargetSessionId(in_session_id)
         , PacketData(in_packet_data)
-        , Result(DbResult::SUCCESS)
     {
     }
 
@@ -50,4 +40,4 @@ struct Job
     using WeakPtr   = std::weak_ptr<Job>;
 };
 
-} // namespace gs
+} // namespace gs   

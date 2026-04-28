@@ -31,6 +31,7 @@ add_executable(game_server
     src/logic/GameWorker.cpp
     src/logic/DbWorker.cpp
     src/logic/HeartbeatTimer.cpp
+    src/user/UserManager.cpp
     src/worker/Worker.cpp
     src/worker/WorkerManager.cpp
 )

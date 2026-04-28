@@ -12,6 +12,7 @@ namespace gs
 {
 
 class GameWorker;
+class User;
 
 class Session : public std::enable_shared_from_this<Session>
 {
@@ -41,6 +42,18 @@ public:
         return m_last_activity_time;
     }
 
+    // User 바인딩.
+    // LOGIN 처리 시 GameWorker가 호출.
+    void BindUser(std::shared_ptr<User> in_user)
+    {
+        m_user = in_user;
+    }
+
+    std::shared_ptr<User> GetUser() const
+    {
+        return m_user;
+    }
+
 private:
     void DoReceive();
     void OnReceiveComplete(const boost::system::error_code& in_ec, std::size_t in_bytes);
@@ -54,6 +67,7 @@ private:
     std::vector<std::uint8_t>       m_receive_buffer;
     PacketBuffer                    m_packet_buffer;
     std::shared_ptr<GameWorker>     m_game_worker;
+    std::shared_ptr<User>           m_user;
     std::vector<std::uint8_t>       m_send_queue;
     bool                            m_is_sending;
     std::chrono::system_clock::time_point m_last_activity_time;

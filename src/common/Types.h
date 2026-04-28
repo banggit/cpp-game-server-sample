@@ -8,6 +8,8 @@ namespace gs
 
 using Port      = std::uint16_t;
 using SessionId = std::uint64_t;
+using UserId    = std::uint64_t;
+using AccountId = std::uint64_t;
 
 enum class PacketId : std::uint16_t
 {

@@ -14,16 +14,8 @@ class GameWorker;
 class DbWorker;
 class HeartbeatTimer;
 class WorkerManager;
+class UserManager;
 
-// 서버 lifecycle을 관리하는 최상위 클래스.
-//
-// 책임:
-//   1. lifecycle    - 시작/종료, 시그널 처리
-//   2. network      - asio io_context (네트워크 reactor 역할)
-//   3. workers      - GameWorker / DbWorker 등록 및 wiring
-//
-// io_context.run()이 메인 스레드에서 돌며 네트워크 I/O를 담당하고,
-// 게임 로직은 GameWorker 스레드에서, DB I/O는 DbWorker 스레드에서 수행된다.
 class ServerApp
 {
 public:
@@ -46,6 +38,7 @@ private:
     // ────────────────────────────────────────────
     Port                                m_port;
     std::shared_ptr<WorkerManager>      m_worker_manager;
+    std::shared_ptr<UserManager>        m_user_manager;
 
     // ────────────────────────────────────────────
     // network reactor (asio I/O on main thread)

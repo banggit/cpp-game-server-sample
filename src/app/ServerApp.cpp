@@ -6,6 +6,7 @@
 #include "logic/GameWorker.h"
 #include "logic/DbWorker.h"
 #include "logic/HeartbeatTimer.h"
+#include "user/UserManager.h"
 #include "worker/WorkerManager.h"
 
 #include <csignal>
@@ -16,6 +17,7 @@ namespace gs
 ServerApp::ServerApp(Port in_port)
     : m_port(in_port)
     , m_worker_manager(std::make_shared<WorkerManager>())
+    , m_user_manager(std::make_shared<UserManager>())
     , m_io()
     , m_handlers(m_io, SIGINT, SIGTERM)
     , m_session_manager(std::make_shared<SessionManager>(m_io))
@@ -28,9 +30,6 @@ ServerApp::ServerApp(Port in_port)
 
 ServerApp::~ServerApp() = default;
 
-// ────────────────────────────────────────────
-// lifecycle
-// ────────────────────────────────────────────
 void ServerApp::Run()
 {
     InitSignalHandlers();
@@ -38,10 +37,7 @@ void ServerApp::Run()
     InitNetwork();
 
     LOG_INFO("server running on port " + std::to_string(m_port));
-
-    // 메인 스레드는 여기서 네트워크 I/O reactor로 동작한다.
     m_io.run();
-
     LOG_INFO("server stopped");
 }
 
@@ -71,20 +67,17 @@ void ServerApp::InitSignalHandlers()
     });
 }
 
-// ────────────────────────────────────────────
-// workers
-// ────────────────────────────────────────────
 void ServerApp::InitWorkers()
 {
-    // 1. GameWorker 등록.
-    m_game_worker = std::make_shared<GameWorker>(m_session_manager);
+    // 1. GameWorker 등록 (UserManager 주입).
+    m_game_worker = std::make_shared<GameWorker>(m_session_manager, m_user_manager);
     if (!m_worker_manager->Insert("game_worker", m_game_worker))
     {
         LOG_ERROR("failed to register game worker");
         return;
     }
 
-    // 2. DbWorker 등록 (GameWorker 참조 주입).
+    // 2. DbWorker 등록.
     m_db_worker = std::make_shared<DbWorker>(m_game_worker);
     if (!m_worker_manager->Insert("db_worker", m_db_worker))
     {
@@ -96,9 +89,6 @@ void ServerApp::InitWorkers()
     m_game_worker->SetDbWorker(m_db_worker);
 }
 
-// ────────────────────────────────────────────
-// network reactor
-// ────────────────────────────────────────────
 void ServerApp::InitNetwork()
 {
     m_heartbeat_timer = std::make_unique<HeartbeatTimer>(m_session_manager);

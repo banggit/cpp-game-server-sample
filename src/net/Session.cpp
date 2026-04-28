@@ -15,6 +15,7 @@ Session::Session(boost::asio::io_context& in_io, SessionId in_session_id, std::s
     , m_receive_buffer(MAX_PACKET_SIZE)
     , m_packet_buffer()
     , m_game_worker(in_game_worker)
+    , m_user(nullptr)
     , m_send_queue()
     , m_is_sending(false)
     , m_last_activity_time(std::chrono::system_clock::now())
@@ -54,10 +55,11 @@ void Session::Close()
         m_socket.close(ec);
         LOG_INFO("session " + std::to_string(m_session_id) + " closed");
 
+        // GameWorker가 User 정리 + SessionManager 제거 모두 처리.
         auto game_worker = m_game_worker;
         if (game_worker)
         {
-            game_worker->RemoveSession(m_session_id);
+            game_worker->OnSessionClosed(m_session_id);
         }
     }
 }

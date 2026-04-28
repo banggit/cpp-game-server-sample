@@ -1,18 +1,23 @@
 #include "logic/GameWorker.h"
 
 #include "logic/DbWorker.h"
-#include "log/Logger.h"
+#include "user/UserManager.h"
+#include "user/User.h"
 #include "net/Session.h"
+#include "log/Logger.h"
 
 namespace gs
 {
 
-GameWorker::GameWorker(std::shared_ptr<SessionManager> in_session_manager)
+GameWorker::GameWorker(std::shared_ptr<SessionManager> in_session_manager,
+                       std::shared_ptr<UserManager> in_user_manager)
     : Worker()
     , m_session_manager(in_session_manager)
+    , m_user_manager(in_user_manager)
     , m_db_worker(nullptr)
     , m_packet_handler()
 {
+    m_packet_handler.SetUserManager(in_user_manager);
 }
 
 GameWorker::~GameWorker() = default;
@@ -33,12 +38,25 @@ void GameWorker::OnDestroy()
     LOG_DEBUG("game worker destroyed");
 }
 
-void GameWorker::RemoveSession(SessionId in_session_id)
+void GameWorker::OnSessionClosed(SessionId in_session_id)
 {
-    if (m_session_manager)
+    if (!m_session_manager)
     {
-        m_session_manager->RemoveSession(in_session_id);
+        return;
     }
+
+    // Session에 바인딩된 User가 있으면 UserManager에서 제거.
+    auto session = m_session_manager->GetSession(in_session_id);
+    if (session)
+    {
+        auto user = session->GetUser();
+        if (user && m_user_manager)
+        {
+            m_user_manager->RemoveUser(user->GetUserId());
+        }
+    }
+
+    m_session_manager->RemoveSession(in_session_id);
 }
 
 void GameWorker::ProcessJob(const Job& in_job)
@@ -47,10 +65,6 @@ void GameWorker::ProcessJob(const Job& in_job)
     {
         case JobType::PACKET_PROCESS:
             ProcessPacketJob(in_job);
-            break;
-
-        case JobType::DB_CALLBACK:
-            ProcessDbCallback(in_job);
             break;
 
         case JobType::SESSION_CLOSE:
@@ -73,18 +87,6 @@ void GameWorker::ProcessPacketJob(const Job& in_job)
     }
 
     m_packet_handler.Dispatch(in_job.TargetSessionId, in_job.PacketData, session);
-}
-
-void GameWorker::ProcessDbCallback(const Job& in_job)
-{
-    auto session = m_session_manager->GetSession(in_job.TargetSessionId);
-    if (!session)
-    {
-        LOG_WARN("db callback: session not found [" + std::to_string(in_job.TargetSessionId) + "]");
-        return;
-    }
-
-    m_packet_handler.OnDbCallback(in_job.TargetSessionId, in_job.PacketData, in_job.Result, session);
 }
 
 } // namespace gs

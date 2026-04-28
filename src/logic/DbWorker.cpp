@@ -31,7 +31,7 @@ void DbWorker::ProcessJob(const Job& in_job)
 {
     switch (in_job.Type)
     {
-        case JobType::DB_QUERY:
+        case JobType::DB_LOG_LOGIN:
             ProcessDbQuery(in_job);
             break;
 
@@ -43,22 +43,14 @@ void DbWorker::ProcessJob(const Job& in_job)
 
 void DbWorker::ProcessDbQuery(const Job& in_job)
 {
-    LOG_DEBUG("db worker processing query for session " + std::to_string(in_job.TargetSessionId));
+    LOG_DEBUG("db worker logging login for session " + std::to_string(in_job.TargetSessionId));
 
-    // 실제 DB I/O 시뮬레이션.
+    // 실제 DB INSERT 시뮬레이션.
     std::this_thread::sleep_for(DB_LATENCY);
 
-    // 결과를 GameWorker로 콜백.
-    Job callback_job;
-    callback_job.Type            = JobType::DB_CALLBACK;
-    callback_job.TargetSessionId = in_job.TargetSessionId;
-    callback_job.PacketData      = in_job.PacketData;
-    callback_job.Result          = DbResult::SUCCESS;
-
-    if (m_game_worker)
-    {
-        m_game_worker->Push(callback_job);
-    }
+    // fire-and-forget: 결과를 GameWorker에 돌려보내지 않는다.
+    // 실패한다면 여기서 로그만 남기고 끝낸다 (실제 코드라면 retry 큐 등).
+    LOG_DEBUG("db worker login record written for session " + std::to_string(in_job.TargetSessionId));
 }
 
 } // namespace gs
