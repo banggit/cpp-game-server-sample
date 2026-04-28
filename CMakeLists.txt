@@ -31,6 +31,8 @@ add_executable(game_server
     src/logic/JobQueue.cpp
     src/logic/LogicWorker.cpp
     src/logic/HeartbeatTimer.cpp
+    src/worker/Worker.cpp
+    src/worker/WorkerManager.cpp
 )
 
 target_include_directories(game_server PRIVATE
