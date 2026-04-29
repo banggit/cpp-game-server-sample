@@ -10,8 +10,8 @@ C++ 게임 서버의 기본 골격을 담은 샘플 프로젝트.
 
 - C++17
 - CMake (3.16+)
-- Boost.Asio (헤더 온리, 1.71+)
-- pthread / std::thread
+- Boost.Asio (헤더 온리)
+- std::thread
 
 ## 프로젝트 구조
 
@@ -54,32 +54,61 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
 cmake --build build -j
 ```
 
+실행:
+```bash
+./build/game_server
+./build/game_server 8888   # 포트 지정
+```
+
 ### Windows
 
-vcpkg 사용:
+**1. vcpkg 설치 (한 번만)**
 
-```bash
-git clone https://github.com/Microsoft/vcpkg.git
-cd vcpkg
+```powershell
+git clone https://github.com/Microsoft/vcpkg.git C:\vcpkg
+cd C:\vcpkg
 .\bootstrap-vcpkg.bat
 .\vcpkg install boost-asio:x64-windows
-
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug ^
-    -DCMAKE_TOOLCHAIN_FILE="path/to/vcpkg/scripts/buildsystems/vcpkg.cmake"
-cmake --build build -j
 ```
 
-Visual Studio 2022는 CMake 네이티브 지원이 있어 폴더를 열면 바로 빌드된다.
+**2. 환경변수 설정 (한 번만)**
 
-## 실행
-
-```bash
-# 기본 포트 7777
-./build/game_server
-
-# 다른 포트 지정
-./build/game_server 8888
+```powershell
+[System.Environment]::SetEnvironmentVariable('VCPKG_ROOT', 'C:\vcpkg', 'User')
 ```
+
+설정 후 PowerShell / VSCode 재시작 필요.
+
+**3. 빌드**
+
+프로젝트 폴더에서:
+
+```powershell
+cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+cmake --build build --config Debug -j
+```
+
+> Visual Studio generator는 multi-config이므로 `--config Debug`를 빌드 시점에 지정한다 (configure 시점 `CMAKE_BUILD_TYPE`은 무시된다).
+
+**4. 실행**
+
+```powershell
+.\build\Debug\game_server.exe
+.\build\Debug\game_server.exe 8888   # 포트 지정
+```
+
+> Windows + Visual Studio generator는 빌드 결과물을 `build\Debug\` 또는 `build\Release\` 서브폴더에 생성한다 (macOS / Linux의 Makefile generator와 다른 점).
+
+Visual Studio 2022는 CMake 네이티브 지원이 있다. 폴더 열기 후 `CMakeSettings.json` 또는 `CMakePresets.json`에 vcpkg toolchain을 설정해주면 IDE 내에서 빌드/디버깅이 가능하다.
+
+## VSCode 디버깅
+
+`.vscode/launch.json`이 macOS / Windows 모두 지원하도록 OS별 override가 들어있다.
+
+- macOS: CodeLLDB 확장 필요 (`vadimcn.vscode-lldb`)
+- Windows: C/C++ 확장 필요 (`ms-vscode.cpptools`)
+
+F5 누르면 빌드 후 디버거가 자동으로 붙는다.
 
 서버 부팅 시 워커 두 개 (game_worker, db_worker) 가 각자 스레드를 시작하고, 메인 스레드는 asio io_context 로 네트워크 reactor 역할을 한다.
 
