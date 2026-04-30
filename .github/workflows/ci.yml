@@ -49,12 +49,12 @@ jobs:
           path: |
             ~/Library/Caches/Homebrew
             /usr/local/Homebrew
-          key: brew-${{ runner.os }}-boost-cmake
+          key: brew-${{ runner.os }}-boost
 
       - name: Install dependencies (macOS)
         if: runner.os == 'macOS'
-        run: |
-          brew install boost cmake
+        # cmake 는 GitHub macOS runner 에 이미 설치되어 있다.
+        run: brew install boost
 
       # ────────────────────────────────────────────
       # Build cache
@@ -108,6 +108,7 @@ jobs:
         with:
           context: .
           push: false
+          load: true
           tags: cpp-game-server-sample:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
