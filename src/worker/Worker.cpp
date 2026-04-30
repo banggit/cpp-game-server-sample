@@ -18,6 +18,11 @@ Worker::Worker()
 
 Worker::~Worker()
 {
+    // 정상 흐름에서는 WorkerManager가 Shutdown()을 호출하지만,
+    // 예외 경로에서도 무한 join 되지 않도록 방어적으로 호출.
+    // Shutdown()은 atomic store만 하므로 idempotent.
+    Shutdown();
+
     if (m_thread.joinable())
     {
         m_thread.join();
@@ -62,9 +67,12 @@ Job Worker::Pop()
 
 void Worker::StartWorkerThread()
 {
-    m_thread = std::thread([this]()
+    // 람다가 self(shared_ptr)를 보유하므로 스레드 종료 전까지 Worker는 살아있음.
+    // [this] 캡처 시 Worker 소멸 후 스레드가 dangling pointer 접근하는 위험을 방지.
+    auto self = shared_from_this();
+    m_thread = std::thread([self]()
     {
-        ThreadMain();
+        self->ThreadMain();
     });
 }
 

@@ -2,6 +2,7 @@
 
 #include "worker/Worker.h"
 
+#include <atomic>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -21,10 +22,8 @@ public:
     WorkerManager(const WorkerManager&) = delete;
     WorkerManager& operator=(const WorkerManager&) = delete;
 
-    // 워커 등록. 스레드가 즉시 시작된다.
     bool Insert(const std::string& in_name, std::shared_ptr<Worker> in_worker);
 
-    // 등록된 워커 조회.
     std::shared_ptr<Worker> Find(const std::string& in_name);
 
     template<typename T>
@@ -33,7 +32,6 @@ public:
         return std::dynamic_pointer_cast<T>(Find(in_name));
     }
 
-    // 모든 워커에 종료 신호 후 join.
     void Destroy();
 
     std::size_t GetWorkerCount() const;
@@ -41,7 +39,7 @@ public:
 private:
     std::map<std::string, std::shared_ptr<Worker>>  m_workers;
     mutable std::mutex                              m_mutex;
-    bool                                            m_destroyed;
+    std::atomic<bool>                               m_destroyed;
 };
 
 } // namespace gs

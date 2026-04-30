@@ -104,7 +104,8 @@ void GameWorker::ProcessJob(const Job& in_job)
             break;
 
         case JobType::SESSION_CLOSE:
-            LOG_DEBUG("session close: " + std::to_string(in_job.TargetSessionId));
+            // 항상 GameWorker 스레드에서만 정리 (User / Session 제거).
+            OnSessionClosed(in_job.TargetSessionId);
             break;
 
         default:

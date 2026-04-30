@@ -47,20 +47,26 @@ void Session::Start(boost::asio::ip::tcp::socket in_socket)
 
 void Session::Close()
 {
-    if (m_is_connected)
+    if (!m_is_connected)
     {
-        m_is_connected = false;
-        boost::system::error_code ec;
-        m_socket.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
-        m_socket.close(ec);
-        LOG_INFO("session " + std::to_string(m_session_id) + " closed");
+        return;
+    }
 
-        // GameWorker가 User 정리 + SessionManager 제거 모두 처리.
-        auto game_worker = m_game_worker;
-        if (game_worker)
-        {
-            game_worker->OnSessionClosed(m_session_id);
-        }
+    m_is_connected = false;
+
+    boost::system::error_code ec;
+    m_socket.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
+    m_socket.close(ec);
+    LOG_INFO("session " + std::to_string(m_session_id) + " closed");
+
+    // User / Session 정리는 GameWorker 스레드에서만 일어나도록 잡 큐로 던짐.
+    // Close()는 어떤 스레드에서든 호출될 수 있지만 (network / game worker / io_context),
+    // 정리 로직은 항상 단일 스레드에서 처리되게 한다.
+    auto game_worker = m_game_worker;
+    if (game_worker)
+    {
+        Job job(JobType::SESSION_CLOSE, m_session_id, std::vector<std::uint8_t>());
+        game_worker->Push(job);
     }
 }
 
@@ -72,12 +78,26 @@ void Session::SendPacket(const std::vector<std::uint8_t>& in_packet_data)
         return;
     }
 
-    m_send_queue.insert(m_send_queue.end(), in_packet_data.begin(), in_packet_data.end());
-
-    if (!m_is_sending)
+    // SendPacket은 GameWorker 스레드에서 호출되지만,
+    // m_send_queue / m_is_sending / async_send 는 io_context 스레드에서만 만지도록 dispatch.
+    // 이렇게 하면 락 없이도 single-threaded 보장으로 데이터 정합성이 유지된다.
+    auto self = shared_from_this();
+    boost::asio::post(m_io, [self, in_packet_data]()
     {
-        DoSend();
-    }
+        if (!self->m_is_connected)
+        {
+            return;
+        }
+
+        self->m_send_queue.insert(self->m_send_queue.end(),
+                                  in_packet_data.begin(),
+                                  in_packet_data.end());
+
+        if (!self->m_is_sending)
+        {
+            self->DoSend();
+        }
+    });
 }
 
 void Session::DoReceive()

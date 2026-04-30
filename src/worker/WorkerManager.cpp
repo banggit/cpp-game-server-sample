@@ -57,11 +57,12 @@ std::shared_ptr<Worker> WorkerManager::Find(const std::string& in_name)
 
 void WorkerManager::Destroy()
 {
-    if (m_destroyed)
+    // 두 스레드가 동시에 진입해도 한 번만 실행되도록 CAS 로 진입 검사.
+    bool expected = false;
+    if (!m_destroyed.compare_exchange_strong(expected, true))
     {
         return;
     }
-    m_destroyed = true;
 
     std::map<std::string, std::shared_ptr<Worker>> snapshot;
     {
