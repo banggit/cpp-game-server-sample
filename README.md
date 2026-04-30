@@ -1,5 +1,7 @@
 # C++ Game Server Sample
 
+[![CI](https://github.com/banggit/cpp-game-server-sample/actions/workflows/ci.yml/badge.svg)](https://github.com/banggit/cpp-game-server-sample/actions/workflows/ci.yml)
+
 C++ 게임 서버의 기본 골격을 담은 샘플 프로젝트.
 
 실무 게임 서버에서 자주 등장하는 구조 — 워커 기반 잡 디스패치, 네트워크/로직 스레드 분리, 세션 생명주기 관리, 비동기 DB I/O — 를 작은 규모로 정리해 보여주는 것이 목적이다.
@@ -177,6 +179,12 @@ python3 tests/client.py interactive
 ```
 
 자세한 사용법은 [tests/README.md](tests/README.md) 참조.
+
+## CI
+
+GitHub Actions로 macOS / Linux 빌드를 매 push / PR 마다 자동 검증한다. Debug / Release 두 빌드 타입 모두 빌드 + smoke test (서버 부팅 / 정상 종료) 통과해야 한다.
+
+워크플로우: [.github/workflows/ci.yml](.github/workflows/ci.yml)
 
 ## 코드 컨벤션
 
