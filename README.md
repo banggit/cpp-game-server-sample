@@ -123,6 +123,23 @@ Release 빌드는 preset 이름을 `*-release`로 바꾼다.
 
 > Windows의 Visual Studio generator는 multi-config이므로 빌드 결과물이 `build\Debug\` 또는 `build\Release\` 서브폴더에 생성된다 (macOS / Linux의 Makefile generator와 다른 점).
 
+## Docker
+
+OS / 의존성 설치 없이 바로 빌드/실행 가능하다.
+
+```bash
+# 이미지 빌드
+docker build -t cpp-game-server-sample .
+
+# 실행 (기본 포트 7777)
+docker run --rm -p 7777:7777 cpp-game-server-sample
+
+# 다른 포트로 실행
+docker run --rm -p 8888:8888 cpp-game-server-sample 8888
+```
+
+Multi-stage build로 빌드 환경(Boost dev, build-essential)과 런타임을 분리하여 최종 이미지 크기를 100MB대로 유지한다 (단일 stage 시 600MB 이상).
+
 ## VSCode 디버깅
 
 `.vscode/launch.json`이 macOS / Windows 모두 지원하도록 OS별 override가 들어있다.
@@ -182,7 +199,10 @@ python3 tests/client.py interactive
 
 ## CI
 
-GitHub Actions로 macOS / Linux 빌드를 매 push / PR 마다 자동 검증한다. Debug / Release 두 빌드 타입 모두 빌드 + smoke test (서버 부팅 / 정상 종료) 통과해야 한다.
+GitHub Actions로 매 push / PR 마다 자동 검증한다.
+
+- macOS / Linux × Debug / Release 매트릭스 빌드 + smoke test
+- Docker 이미지 빌드 + 컨테이너 smoke test
 
 워크플로우: [.github/workflows/ci.yml](.github/workflows/ci.yml)
 

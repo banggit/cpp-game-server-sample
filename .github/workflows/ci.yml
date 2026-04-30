@@ -92,3 +92,35 @@ jobs:
           kill -SIGTERM $SERVER_PID
           wait $SERVER_PID 2>/dev/null || true
           echo "Server started and shut down cleanly"
+
+  docker:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          tags: cpp-game-server-sample:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke test (Docker)
+        run: |
+          docker run -d --name gss-test -p 7777:7777 cpp-game-server-sample:ci
+          sleep 3
+          if ! docker ps | grep gss-test; then
+            echo "Container failed to start"
+            docker logs gss-test
+            exit 1
+          fi
+          docker stop gss-test
+          docker rm gss-test
+          echo "Docker container started and shut down cleanly"
