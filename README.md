@@ -9,7 +9,7 @@ C++ 게임 서버의 기본 골격을 담은 샘플 프로젝트.
 ## 기술 스택
 
 - C++17
-- CMake (3.16+)
+- CMake (3.19+ — `CMakePresets.json` v3 사용)
 - Boost.Asio (헤더 온리)
 - std::thread
 
@@ -45,61 +45,81 @@ src/
 
 ## 빌드
 
-### macOS
+이 프로젝트는 `CMakePresets.json`으로 빌드 설정을 관리한다. 빌드 명령어는 OS 무관하게 동일한 형식이고, 각 OS의 toolchain / generator 차이는 preset이 흡수한다.
+
+### 사전 준비
+
+**macOS**
 
 ```bash
 brew install boost cmake
-
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
-cmake --build build -j
 ```
 
-실행:
+**Linux** (Ubuntu / Debian)
+
 ```bash
-./build/game_server
-./build/game_server 8888   # 포트 지정
+sudo apt-get install libboost-dev cmake build-essential
 ```
 
-### Windows
+**Windows**
 
-**1. vcpkg 설치 (한 번만)**
+vcpkg 설치 + 환경변수 설정 (한 번만):
 
 ```powershell
 git clone https://github.com/Microsoft/vcpkg.git C:\vcpkg
 cd C:\vcpkg
 .\bootstrap-vcpkg.bat
 .\vcpkg install boost-asio:x64-windows
-```
 
-**2. 환경변수 설정 (한 번만)**
-
-```powershell
 [System.Environment]::SetEnvironmentVariable('VCPKG_ROOT', 'C:\vcpkg', 'User')
 ```
 
 설정 후 PowerShell / VSCode 재시작 필요.
 
-**3. 빌드**
+### 빌드 명령
 
-프로젝트 폴더에서:
+```bash
+# macOS
+cmake --preset macos-debug
+cmake --build --preset macos-debug
 
-```powershell
-cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
-cmake --build build --config Debug -j
+# Linux
+cmake --preset linux-debug
+cmake --build --preset linux-debug
+
+# Windows (PowerShell)
+cmake --preset windows-debug
+cmake --build --preset windows-debug
 ```
 
-> Visual Studio generator는 multi-config이므로 `--config Debug`를 빌드 시점에 지정한다 (configure 시점 `CMAKE_BUILD_TYPE`은 무시된다).
+Release 빌드는 preset 이름을 `*-release`로 바꾼다.
 
-**4. 실행**
+### 사용 가능한 Preset
 
-```powershell
+| Preset             | 설명                                |
+|--------------------|-------------------------------------|
+| `macos-debug`      | macOS Debug (Makefile generator)    |
+| `macos-release`    | macOS Release                       |
+| `linux-debug`      | Linux Debug                         |
+| `linux-release`    | Linux Release                       |
+| `windows-debug`    | Windows Debug (Visual Studio)       |
+| `windows-release`  | Windows Release                     |
+
+각 preset은 OS 조건이 걸려있어 다른 OS에서는 자동으로 보이지 않는다.
+
+### 실행
+
+```bash
+# macOS / Linux
+./build/game_server
+./build/game_server 8888   # 포트 지정
+
+# Windows (PowerShell)
 .\build\Debug\game_server.exe
-.\build\Debug\game_server.exe 8888   # 포트 지정
+.\build\Debug\game_server.exe 8888
 ```
 
-> Windows + Visual Studio generator는 빌드 결과물을 `build\Debug\` 또는 `build\Release\` 서브폴더에 생성한다 (macOS / Linux의 Makefile generator와 다른 점).
-
-Visual Studio 2022는 CMake 네이티브 지원이 있다. 폴더 열기 후 `CMakeSettings.json` 또는 `CMakePresets.json`에 vcpkg toolchain을 설정해주면 IDE 내에서 빌드/디버깅이 가능하다.
+> Windows의 Visual Studio generator는 multi-config이므로 빌드 결과물이 `build\Debug\` 또는 `build\Release\` 서브폴더에 생성된다 (macOS / Linux의 Makefile generator와 다른 점).
 
 ## VSCode 디버깅
 
@@ -108,7 +128,7 @@ Visual Studio 2022는 CMake 네이티브 지원이 있다. 폴더 열기 후 `CM
 - macOS: CodeLLDB 확장 필요 (`vadimcn.vscode-lldb`)
 - Windows: C/C++ 확장 필요 (`ms-vscode.cpptools`)
 
-F5 누르면 빌드 후 디버거가 자동으로 붙는다.
+F5 누르면 빌드 후 디버거가 자동으로 붙는다 (`tasks.json`이 OS 자동 감지).
 
 서버 부팅 시 워커 두 개 (game_worker, db_worker) 가 각자 스레드를 시작하고, 메인 스레드는 asio io_context 로 네트워크 reactor 역할을 한다.
 

@@ -5,22 +5,12 @@
             "label": "cmake: configure (Debug)",
             "type": "shell",
             "command": "cmake",
-            "args": [
-                "--fresh",
-                "-S", "${workspaceFolder}",
-                "-B", "${workspaceFolder}/build",
-                "-DCMAKE_BUILD_TYPE=Debug",
-                "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
-            ],
+            "args": ["--preset", "macos-debug"],
             "windows": {
-                "args": [
-                    "--fresh",
-                    "-S", "${workspaceFolder}",
-                    "-B", "${workspaceFolder}/build",
-                    "-DCMAKE_BUILD_TYPE=Debug",
-                    "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
-                    "-DCMAKE_TOOLCHAIN_FILE=${env:VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
-                ]
+                "args": ["--preset", "windows-debug"]
+            },
+            "linux": {
+                "args": ["--preset", "linux-debug"]
             },
             "group": "build",
             "presentation": {
@@ -32,10 +22,13 @@
             "label": "cmake: build",
             "type": "shell",
             "command": "cmake",
-            "args": [
-                "--build", "${workspaceFolder}/build",
-                "--parallel"
-            ],
+            "args": ["--build", "--preset", "macos-debug"],
+            "windows": {
+                "args": ["--build", "--preset", "windows-debug"]
+            },
+            "linux": {
+                "args": ["--build", "--preset", "linux-debug"]
+            },
             "group": {
                 "kind": "build",
                 "isDefault": true
