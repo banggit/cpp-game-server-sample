@@ -123,7 +123,9 @@ void GameWorker::ProcessPacketJob(const Job& in_job)
         return;
     }
 
-    m_packet_handler.Dispatch(in_job.TargetSessionId, in_job.PacketData, session);
+    // PacketContext 로 패킷 처리 인자를 묶어서 핸들러에 전달.
+    PacketContext ctx{ in_job.TargetSessionId, in_job.PacketData, session };
+    m_packet_handler.Dispatch(ctx);
 }
 
 } // namespace gs
