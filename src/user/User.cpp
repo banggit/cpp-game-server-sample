@@ -18,7 +18,7 @@ void User::CheckHeartbeat(const std::shared_ptr<Session>& in_session)
         return;
     }
 
-    const auto now = std::chrono::system_clock::now();
+    const auto now = std::chrono::steady_clock::now();
     const auto last_activity = in_session->GetLastActivity();
     const auto duration = std::chrono::duration_cast<std::chrono::seconds>(now - last_activity);
 

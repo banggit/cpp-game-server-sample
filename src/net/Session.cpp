@@ -18,7 +18,7 @@ Session::Session(boost::asio::io_context& in_io, SessionId in_session_id, std::s
     , m_user(nullptr)
     , m_send_queue()
     , m_is_sending(false)
-    , m_last_activity_time(std::chrono::system_clock::now())
+    , m_last_activity_time(std::chrono::steady_clock::now())
 {
 }
 
@@ -28,7 +28,11 @@ void Session::Start(boost::asio::ip::tcp::socket in_socket)
 {
     m_socket = std::move(in_socket);
     m_is_connected = true;
-    m_last_activity_time = std::chrono::system_clock::now();
+    
+    //system_clock ->steady_clock으로 변경(경과 시간만 정확히)
+    //memory_order_relaxed - 순서 보장이 필요한 동기화 지점이 아님.
+    m_last_activity_time.store(std::chrono::steady_clock::now(),
+                           std::memory_order_relaxed);
 
     boost::system::error_code ec;
     const auto remote_ep = m_socket.remote_endpoint(ec);
@@ -142,7 +146,8 @@ void Session::OnReceiveComplete(const boost::system::error_code& in_ec, std::siz
         return;
     }
 
-    m_last_activity_time = std::chrono::system_clock::now();
+    m_last_activity_time.store(std::chrono::steady_clock::now(),
+                           std::memory_order_relaxed);
     LOG_DEBUG("session " + std::to_string(m_session_id)
               + " received " + std::to_string(in_bytes) + " bytes");
 
@@ -151,14 +156,28 @@ void Session::OnReceiveComplete(const boost::system::error_code& in_ec, std::siz
 
     DoReceive();
 }
-
+    
 void Session::ProcessPackets()
 {
     std::vector<std::uint8_t> packet_data;
-    while (m_packet_buffer.TryReadPacket(packet_data))
+    while (true)
     {
-        Job job(JobType::PACKET_PROCESS, m_session_id, packet_data);
-        m_game_worker->Push(job);
+        const auto result = m_packet_buffer.TryReadPacket(packet_data);
+
+        if (result == PacketReadResult::PACKET_READY)
+        {
+            m_game_worker->Push(Job(JobType::PACKET_PROCESS, m_session_id, packet_data));
+            continue;
+        }
+
+        if (result == PacketReadResult::INVALID)
+        {
+            LOG_WARN("session " + std::to_string(m_session_id)
+                     + " protocol violation, closing");
+            Close();
+        }
+
+        break;  // NEED_MORE 또는 INVALID
     }
 }
 

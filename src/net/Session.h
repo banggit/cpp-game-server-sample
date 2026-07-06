@@ -37,9 +37,9 @@ public:
         return m_is_connected.load();
     }
 
-    std::chrono::system_clock::time_point GetLastActivity() const
+    std::chrono::steady_clock::time_point GetLastActivity() const
     {
-        return m_last_activity_time;
+        return m_last_activity_time.load(std::memory_order_relaxed);
     }
 
     // User 바인딩.
@@ -71,7 +71,8 @@ private:
     std::shared_ptr<User>           m_user;
     std::vector<std::uint8_t>       m_send_queue;
     bool                            m_is_sending;
-    std::chrono::system_clock::time_point m_last_activity_time;
+    
+    std::atomic<std::chrono::steady_clock::time_point> m_last_activity_time;
 };
 
 } // namespace gs

@@ -9,6 +9,15 @@
 namespace gs
 {
 
+
+enum class PacketReadResult : std::uint8_t
+{
+    NEED_MORE,      // 아직 완성된 패킷 없음 (정상)
+    PACKET_READY,   // 패킷 1개 추출 완료
+    INVALID         // 프로토콜 위반 — 세션 절단 대상
+};
+
+
 class PacketBuffer
 {
 public:
@@ -17,7 +26,7 @@ public:
     void Clear();
     void Append(const std::uint8_t* in_data, std::size_t in_size);
 
-    bool TryReadPacket(std::vector<std::uint8_t>& out_packet_data);
+    PacketReadResult TryReadPacket(std::vector<std::uint8_t>& out_packet_data);
 
     std::size_t GetBufferSize() const
     {

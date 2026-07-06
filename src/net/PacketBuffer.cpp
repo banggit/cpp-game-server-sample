@@ -23,31 +23,33 @@ void PacketBuffer::Append(const std::uint8_t* in_data, std::size_t in_size)
     }
 }
 
-bool PacketBuffer::TryReadPacket(std::vector<std::uint8_t>& out_packet_data)
+PacketReadResult PacketBuffer::TryReadPacket(std::vector<std::uint8_t>& out_packet_data)
 {
     if (m_data.size() < PACKET_HEADER_SIZE)
     {
-        return false;
+        return PacketReadResult::NEED_MORE;
     }
 
-    std::uint16_t packet_size = 0;
-    if (!TryReadHeader(packet_size))
+    std::uint16_t payload_size = 0;
+    std::memcpy(&payload_size, m_data.data() + sizeof(std::uint16_t), sizeof(payload_size));
+
+    if (payload_size > MAX_PACKET_SIZE)
     {
-        return false;
+        // 복구 불가능한 스트림 오염 — 이후 바이트 경계를 신뢰할 수 없다.
+        return PacketReadResult::INVALID;
     }
 
-    const std::size_t total_packet_size = PACKET_HEADER_SIZE + packet_size;
-    if (m_data.size() < total_packet_size)
+    const std::size_t total = PACKET_HEADER_SIZE + payload_size;
+    if (m_data.size() < total)
     {
-        return false;
+        return PacketReadResult::NEED_MORE;
     }
 
-    out_packet_data.assign(m_data.begin(), m_data.begin() + total_packet_size);
-    RemoveProcessedBytes(total_packet_size);
-
-    return true;
+    out_packet_data.assign(m_data.begin(), m_data.begin() + total);
+    RemoveProcessedBytes(total);
+    return PacketReadResult::PACKET_READY;
 }
-
+    
 bool PacketBuffer::TryReadHeader(std::uint16_t& out_size)
 {
     if (m_data.size() < PACKET_HEADER_SIZE)
