@@ -22,10 +22,7 @@ Session::Session(boost::asio::io_context& in_io, SessionId in_session_id, std::s
 {
 }
 
-Session::~Session()
-{
-    Close();
-}
+Session::~Session() = default;
 
 void Session::Start(boost::asio::ip::tcp::socket in_socket)
 {
@@ -44,29 +41,33 @@ void Session::Start(boost::asio::ip::tcp::socket in_socket)
 
     DoReceive();
 }
-
+    
 void Session::Close()
 {
-    if (!m_is_connected)
+    // 어떤 스레드에서 불려도 안전. 실제 정리는 io 스레드로 위임.
+    auto self = shared_from_this();
+    boost::asio::dispatch(m_io, [self]()
     {
-        return;
+        self->DoClose();
+    });
+}
+    
+void Session::DoClose()  // io_context 스레드에서만 실행
+{
+    if (!m_is_connected.load())
+    {
+        return;  // 중복 Close 요청 무시 — 이 판정도 io 스레드에서만 일어남
     }
-
-    m_is_connected = false;
+    m_is_connected.store(false);
 
     boost::system::error_code ec;
     m_socket.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
     m_socket.close(ec);
     LOG_INFO("session " + std::to_string(m_session_id) + " closed");
 
-    // User / Session 정리는 GameWorker 스레드에서만 일어나도록 잡 큐로 던짐.
-    // Close()는 어떤 스레드에서든 호출될 수 있지만 (network / game worker / io_context),
-    // 정리 로직은 항상 단일 스레드에서 처리되게 한다.
-    auto game_worker = m_game_worker;
-    if (game_worker)
+    if (m_game_worker)
     {
-        Job job(JobType::SESSION_CLOSE, m_session_id, std::vector<std::uint8_t>());
-        game_worker->Push(job);
+        m_game_worker->Push(Job(JobType::SESSION_CLOSE, m_session_id, {}));
     }
 }
 

@@ -34,7 +34,7 @@ public:
 
     bool IsConnected() const
     {
-        return m_is_connected;
+        return m_is_connected.load();
     }
 
     std::chrono::system_clock::time_point GetLastActivity() const
@@ -59,11 +59,12 @@ private:
     void OnReceiveComplete(const boost::system::error_code& in_ec, std::size_t in_bytes);
     void ProcessPackets();
     void DoSend();
+    void DoClose();
 
     boost::asio::io_context&        m_io;
     boost::asio::ip::tcp::socket    m_socket;
-    SessionId                        m_session_id;
-    bool                            m_is_connected;
+    SessionId                       m_session_id;
+    std::atomic<bool>               m_is_connected;
     std::vector<std::uint8_t>       m_receive_buffer;
     PacketBuffer                    m_packet_buffer;
     std::shared_ptr<GameWorker>     m_game_worker;
