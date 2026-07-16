@@ -34,11 +34,14 @@ async def read_packet(reader):
     return opcode, payload
 
 
-async def virtual_user(idx, host, port, rate, duration, map_size):
+async def virtual_user(idx, host, port, rate, duration, map_size, ramp):
+    # 램프업: 초당 ramp명씩 접속하도록 시작 시점을 분산
+    if ramp > 0:
+        await asyncio.sleep(idx / ramp)   # idx번째 유저는 idx/ramp초 뒤 접속
     try:
         reader, writer = await asyncio.open_connection(host, port)
     except Exception:
-        S.fail_connect += 1      # ← 연결 단계
+        S.fail_connect += 1
         return
 
     try:
@@ -79,11 +82,16 @@ async def main():
     ap.add_argument("--rate", type=float, default=5)
     ap.add_argument("--duration", type=int, default=60)
     ap.add_argument("--map", type=float, default=100)
+    ap.add_argument("--ramp", type=float, default=100,
+                        help="connections per second during ramp-up (0=all at once)")
     a = ap.parse_args()
+    ramp_time = a.conns / a.ramp if a.ramp > 0 else 0
 
-    print(f"[bot] {a.conns} conns, {a.rate}/s each, {a.duration}s, map {a.map}")
+    print(f"[bot] {a.conns} conns, {a.rate}/s each, {a.duration}s, "
+          f"map {a.map}, ramp {a.ramp}/s (~{ramp_time:.1f}s to full)")
+
     t0 = time.monotonic()
-    await asyncio.gather(*[virtual_user(i, a.host, a.port, a.rate, a.duration, a.map)
+    await asyncio.gather(*[virtual_user(i, a.host, a.port, a.rate, a.duration, a.map, a.ramp)
                            for i in range(a.conns)])
     elapsed = time.monotonic() - t0
 
