@@ -19,9 +19,9 @@ class UserManager;
 // 추후 핸들러에 정보가 추가될 때도 시그니처를 바꾸지 않게 한다.
 struct PacketContext
 {
-    SessionId                            SessionId;
+    SessionId                            TargetSessionId;
     const std::vector<std::uint8_t>&     PacketData;
-    std::shared_ptr<Session>             Session;
+    std::shared_ptr<Session>             TargetSession;
 };
 
 class PacketHandler
