@@ -9,7 +9,7 @@
 namespace gs
 {
 
-DbWorker::DbWorker(std::shared_ptr<GameWorker> in_game_worker)
+DbWorker::DbWorker(std::weak_ptr<GameWorker> in_game_worker)
     : Worker()
     , m_game_worker(in_game_worker)
 {

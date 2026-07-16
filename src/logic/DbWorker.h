@@ -16,7 +16,7 @@ class GameWorker;
 class DbWorker : public Worker
 {
 public:
-    explicit DbWorker(std::shared_ptr<GameWorker> in_game_worker);
+    explicit DbWorker(std::weak_ptr<GameWorker> in_game_worker);
     ~DbWorker();
 
     DbWorker(const DbWorker&) = delete;
@@ -29,7 +29,7 @@ private:
 
     void ProcessDbQuery(const Job& in_job);
 
-    std::shared_ptr<GameWorker>     m_game_worker;
+    std::weak_ptr<GameWorker>     m_game_worker;
 
     static constexpr auto DB_LATENCY = std::chrono::milliseconds(50);
 };
