@@ -61,7 +61,34 @@ Manual commands:
 - `recv [timeout]` — try to receive a packet
 - `quit` — close and exit
 
-## Options
+### Load test bot
+
+Simulates N concurrent virtual users. Each logs in, then sends periodic `MOVE_REQ` packets; the server runs a brute-force AOI query per request and replies with the nearby-user count.
+
+Run the server with the metrics build first so it prints per-second stats:
+
+```bash
+cmake --preset macos-debug-metrics
+cmake --build --preset macos-debug-metrics
+./build-metrics/game_server 7777
+```
+
+Then run the bot:
+
+```bash
+python3 tests/loadbot.py --conns 1000 --rate 5 --duration 60 --ramp 100
+```
+
+Bot options:
+- `--conns <n>` — number of concurrent connections (default 100)
+- `--rate <n>` — MOVE requests per second per user (default 5)
+- `--duration <s>` — how long each user sends after connecting (default 60)
+- `--ramp <n>` — connections opened per second, to avoid accept-backlog overflow (default 100; 0 = all at once)
+- `--map <size>` — coordinate range for random moves (default 100)
+
+The bot reports connection success, actual send rate, and round-trip latency percentiles. Compare its send rate against the server's `[stats]` output: if the server's `jobs/s` keeps up and the queue stays near zero, the server has headroom; a growing queue means the single logic thread is saturating.
+
+## Options (client.py)
 
 - `--host <ip>` — server host (default `127.0.0.1`)
 - `--port <port>` — server port (default `7777`)

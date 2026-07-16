@@ -101,6 +101,7 @@ Release 빌드는 preset 이름을 `*-release`로 바꾼다.
 | Preset             | 설명                                |
 |--------------------|-------------------------------------|
 | `macos-debug`      | macOS Debug (Makefile generator)    |
+| `macos-debug-metrics` | macOS Debug + 부하 계측 (GS_ENABLE_METRICS) |
 | `macos-release`    | macOS Release                       |
 | `linux-debug`      | Linux Debug                         |
 | `linux-release`    | Linux Release                       |
@@ -173,7 +174,8 @@ Payload (variable)
 | 1004   | ECHO_ACK       | S → C     | same as request payload          |
 | 1005   | HEARTBEAT_REQ  | C → S     | (empty)                          |
 | 1006   | HEARTBEAT_ACK  | S → C     | (empty)                          |
-
+| 1007   | MOVE_REQ       | C → S     | x (float) + y (float)            |
+| 1008   | MOVE_ACK       | S → C     | nearby_count (uint16)            |
 ## 테스트
 
 `tests/` 폴더에 Python 표준 라이브러리만 사용하는 테스트 클라이언트가 있다.
@@ -193,9 +195,24 @@ python3 tests/client.py timeout --account 1000
 
 # 대화형 모드
 python3 tests/client.py interactive
+
+# 부하 측정 봇 (계측 빌드 서버 대상)
+python3 tests/loadbot.py --conns 1000 --rate 5 --duration 60 --ramp 100
 ```
 
 자세한 사용법은 [tests/README.md](tests/README.md) 참조.
+
+## 부하 측정
+
+단일 GameWorker 스레드가 MOVE(AOI 조회) 부하를 어디까지 견디는지 측정했다. 측정 환경은 MacBook Air (M4) 단일 머신, 서버·봇이 자원을 공유하는 localhost 조건이라 절대 벤치마크가 아니라 부하 반응 특성으로 읽어야 한다.
+
+| 동시 접속 | 목표 처리량 | 실제 처리량 | 큐 깊이 | p99 latency |
+|---|---|---|---|---|
+| 1000 | 5000 job/s | 5000 (달성) | ~0 | 3.6 ms |
+| 1500 | 7500 job/s | 7500 (달성) | ~0 | 7.6 ms |
+| 2000 | 10000 job/s | ~7200 (포화) | ~600 상주 | 96.9 ms |
+
+단일 로직 스레드는 약 7200 job/초까지 큐 없이 처리하며(1500 동접, p99 8ms 이하), 그 이상에서 큐가 쌓이고 latency가 급증한다. 큐는 무한 발산하지 않고 준평형을 이뤄 버퍼 역할을 한다. 측정 방법·해석은 [doc/architecture.md](doc/architecture.md#부하-측정) 참고.
 
 ## CI
 
@@ -225,6 +242,6 @@ GitHub Actions로 매 push / PR 마다 자동 검증한다.
 - TLS / 인증
 - 분산 구조 / 서버 간 통신
 - 게임 컨텐츠 (전투, 인벤토리 등)
-- 부하 테스트 / 성능 튜닝
+- 공간 분할 기반 최적화 (grid/quadtree), 프로파일링 기반 성능 튜닝
 
 이들은 같은 워커 패턴 위에 추가될 수 있다는 것이 설계 의도다 — `PacketHandler` 에 opcode 추가, `Worker` 상속한 새 워커 (RedisWorker, MatchingWorker 등) 등록.
