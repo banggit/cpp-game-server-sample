@@ -8,6 +8,11 @@
 #include <sstream>
 #include <string>
 
+// 컴파일 타임 최소 로그 레벨. 미지정 시 0(Debug)=전부 출력.
+#ifndef GS_LOG_MIN_LEVEL
+#define GS_LOG_MIN_LEVEL 0
+#endif
+
 namespace gs
 {
 
@@ -74,7 +79,11 @@ private:
 
 } // namespace gs
 
-#define LOG_DEBUG(msg) ::gs::Logger::Instance().Log(::gs::LogLevel::Debug, (msg))
-#define LOG_INFO(msg)  ::gs::Logger::Instance().Log(::gs::LogLevel::Info,  (msg))
-#define LOG_WARN(msg)  ::gs::Logger::Instance().Log(::gs::LogLevel::Warn,  (msg))
-#define LOG_ERROR(msg) ::gs::Logger::Instance().Log(::gs::LogLevel::Error, (msg))
+#define LOG_DEBUG(msg) do { if (0 >= GS_LOG_MIN_LEVEL) \
+::gs::Logger::Instance().Log(::gs::LogLevel::Debug, (msg)); } while (0)
+#define LOG_INFO(msg)  do { if (1 >= GS_LOG_MIN_LEVEL) \
+::gs::Logger::Instance().Log(::gs::LogLevel::Info,  (msg)); } while (0)
+#define LOG_WARN(msg)  do { if (2 >= GS_LOG_MIN_LEVEL) \
+::gs::Logger::Instance().Log(::gs::LogLevel::Warn,  (msg)); } while (0)
+#define LOG_ERROR(msg) do { if (3 >= GS_LOG_MIN_LEVEL) \
+::gs::Logger::Instance().Log(::gs::LogLevel::Error, (msg)); } while (0)

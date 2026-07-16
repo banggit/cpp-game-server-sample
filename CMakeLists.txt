@@ -38,7 +38,7 @@ add_executable(game_server
 
 option(GS_ENABLE_METRICS "Enable worker load metrics" OFF)
 if(GS_ENABLE_METRICS)
-    target_compile_definitions(game_server PRIVATE GS_ENABLE_METRICS)
+    target_compile_definitions(game_server PRIVATE GS_ENABLE_METRICS GS_LOG_MIN_LEVEL=1)
 endif()
 
 target_include_directories(game_server PRIVATE

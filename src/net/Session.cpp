@@ -130,7 +130,12 @@ void Session::OnReceiveComplete(const boost::system::error_code& in_ec, std::siz
 
     if (in_ec)
     {
-        if (in_ec != boost::asio::error::operation_aborted)
+        if (in_ec == boost::asio::error::eof ||
+            in_ec == boost::asio::error::connection_reset)
+        {
+            LOG_INFO("session " + std::to_string(m_session_id) + " closed by peer");
+        }
+        else if (in_ec != boost::asio::error::operation_aborted)
         {
             LOG_WARN("session " + std::to_string(m_session_id)
                      + " receive error: " + in_ec.message());
@@ -138,7 +143,7 @@ void Session::OnReceiveComplete(const boost::system::error_code& in_ec, std::siz
         Close();
         return;
     }
-
+    
     if (in_bytes == 0)
     {
         LOG_INFO("session " + std::to_string(m_session_id) + " closed by peer");
