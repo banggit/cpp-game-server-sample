@@ -18,6 +18,8 @@ enum class JobType : std::uint8_t
 
 struct Job
 {
+    std::chrono::steady_clock::time_point EnqueuedAt = std::chrono::steady_clock::now();
+    
     JobType                         Type;
     SessionId                       TargetSessionId;
     std::vector<std::uint8_t>       PacketData;

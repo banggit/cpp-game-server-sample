@@ -36,6 +36,11 @@ add_executable(game_server
     src/worker/WorkerManager.cpp
 )
 
+option(GS_ENABLE_METRICS "Enable worker load metrics" OFF)
+if(GS_ENABLE_METRICS)
+    target_compile_definitions(game_server PRIVATE GS_ENABLE_METRICS)
+endif()
+
 target_include_directories(game_server PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
 )

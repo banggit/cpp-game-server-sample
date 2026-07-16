@@ -28,6 +28,15 @@
             }
         },
         {
+            "name": "macos-debug-metrics",
+            "displayName": "macOS Debug (Metrics)",
+            "inherits": "macos-debug",
+            "binaryDir": "${sourceDir}/build-metrics",
+            "cacheVariables": {
+                "GS_ENABLE_METRICS": "ON"
+            }
+        },
+        {
             "name": "macos-release",
             "displayName": "macOS Release",
             "inherits": "base",
@@ -97,6 +106,10 @@
         {
             "name": "macos-debug",
             "configurePreset": "macos-debug"
+        },
+        {
+            "name": "macos-debug-metrics",
+            "configurePreset": "macos-debug-metrics"
         },
         {
             "name": "macos-release",

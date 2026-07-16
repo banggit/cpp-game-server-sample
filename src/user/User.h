@@ -49,6 +49,10 @@ public:
     {
         m_session_id = in_session_id;
     }
+    
+    void SetPos(float x, float y) { m_x = x; m_y = y; }
+    float GetX() const { return m_x; }
+    float GetY() const { return m_y; }
 
     // 주기적으로 GameWorker가 호출하는 갱신 함수.
     // Session은 호출자(GameWorker)가 SessionManager에서 lookup해서 넘긴다.
@@ -62,6 +66,9 @@ private:
     AccountId       m_account_id;
     std::string     m_name;
     SessionId       m_session_id;
+    
+    float m_x = 0.0f;
+    float m_y = 0.0f;
 };
 
 } // namespace gs

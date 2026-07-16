@@ -46,6 +46,7 @@ private:
     void HandleLogin(const PacketContext& in_ctx);
     void HandleEcho(const PacketContext& in_ctx);
     void HandleHeartbeat(const PacketContext& in_ctx);
+    void HandleMove(const PacketContext& ctx);
 
     std::shared_ptr<DbWorker>       m_db_worker;
     std::shared_ptr<UserManager>    m_user_manager;

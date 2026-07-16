@@ -37,6 +37,10 @@ bool PacketHandler::Dispatch(const PacketContext& in_ctx)
         case PacketId::HEARTBEAT_REQ:
             HandleHeartbeat(in_ctx);
             break;
+        
+        case PacketId::MOVE_REQ:
+            HandleMove(in_ctx);
+            break;
 
         default:
             LOG_WARN("unknown opcode " + std::to_string(opcode)
@@ -120,6 +124,28 @@ void PacketHandler::HandleHeartbeat(const PacketContext& in_ctx)
 
     PacketBuilder response(PacketId::HEARTBEAT_ACK);
     in_ctx.Session->SendPacket(response.Build());
+}
+    
+void PacketHandler::HandleMove(const PacketContext& ctx) 
+{
+    float x, y;
+    std::memcpy(&x, ctx.PacketData.data() + PACKET_HEADER_SIZE, 4);
+    std::memcpy(&y, ctx.PacketData.data() + PACKET_HEADER_SIZE + 4, 4);
+
+    auto self = ctx.Session->GetUser();
+    if (!self) return;              // 로그인 안 한 세션은 이동 불가
+    self->SetPos(x, y);
+
+    std::uint16_t nearby = 0;       // brute-force: 전체 순회 O(N)
+    m_user_manager->ForEachUser([&](const std::shared_ptr<User>& u) {
+        if (u == self) return;
+        const float dx = u->GetX() - x, dy = u->GetY() - y;
+        if (dx*dx + dy*dy <= AOI_RADIUS * AOI_RADIUS) ++nearby;   // sqrt 회피
+    });
+
+    PacketBuilder ack(PacketId::MOVE_ACK);
+    ack.Write(nearby);
+    ctx.Session->SendPacket(ack.Build());
 }
 
 } // namespace gs

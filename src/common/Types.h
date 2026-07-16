@@ -18,11 +18,14 @@ enum class PacketId : std::uint16_t
     ECHO_REQ      = 1003,
     ECHO_ACK      = 1004,
     HEARTBEAT_REQ = 1005,
-    HEARTBEAT_ACK = 1006
+    HEARTBEAT_ACK = 1006,
+    MOVE_REQ      = 1007,
+    MOVE_ACK      = 1008,
 };
 
 constexpr std::size_t MAX_PACKET_SIZE = 4096;
 constexpr std::size_t PACKET_HEADER_SIZE = 4;
 constexpr auto SESSION_TIMEOUT_DURATION = std::chrono::seconds(30);
+constexpr float AOI_RADIUS = 15.0f; //관심 반경
 
 } // namespace gs
